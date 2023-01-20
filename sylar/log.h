@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <memory>
 #include <list>
+#include <stringstreams>
 
 namespace sylar {
 
@@ -54,8 +55,8 @@ public:
     typedef std::shared_ptr<LogAppender> ptr;
     virtual ~LogAppender() {}
      
-    void log(LogLevel::Level level, LogEvent::ptr event);
-private:
+    virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
+protected:
     LogLevel::Level m_level;
 };
 
@@ -72,6 +73,11 @@ public:
     void warn(LogEvent::ptr event);
     void error(LogEvent::ptr event);
     void fatal(LogEvent::ptr event);
+     
+    void addAppender(LogAppender::ptr appender);
+    void delAppender(LogAppender::ptr appender);
+    LogLevel::Level getLevel() const { return m_level; }
+    void setLevel(LogLevel::Level val) { m_level = val; }
 private:
     std::string m_name;                       // Log Name
     LogLevel::Level m_level;                  // Log Level
@@ -81,11 +87,23 @@ private:
 // Output stdout Appender
 
 class StdoutLogAppender : public LogAppender {
+public:
+    typedef std::shared_ptr<StdoutLogAppender> ptr;
+    void log(LogLevel::Level level, LogEvent::ptr event) override;
+private:
 };
  
 // Output file Appender  
 
 class FileLogAppender : public LogAppender {
+public:
+    typedef std::shared_ptr<FileLogAppender> ptr;
+    void log(LogLevel::Level level, LogEvent::ptr event) override;
+     
+    FileLogAppender(const std::string& filename);
+private:
+    std::string m_name;
+    std::ofstream m_filestream;
 };
 
 }
