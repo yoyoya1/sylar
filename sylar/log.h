@@ -2,10 +2,13 @@
 #define SYLAR_LOG_H
 
 #include <string>
+#include <iostream>
 #include <stdint.h>
 #include <memory>
 #include <list>
-#include <stringstreams>
+#include <sstream>
+#include <fstream>
+#include <vector>
 
 namespace sylar {
 
@@ -43,9 +46,20 @@ public:
 class LogFormatter {
 public:
     typedef std::shared_ptr<LogFormatter> ptr;
-     
+    LogFormatter(const std::string& pattern);
     std::string format(LogEvent::ptr event);
 private:
+    class FormatItem {
+    public:
+    typedef std::shared_ptr<FormatItem> ptr;
+    virtual ~FormatItem() {}
+    virtual void format(std::ostream& os, LogEvent::ptr event) = 0;
+    };
+
+    void init();
+private:
+    std::string m_pattern;
+    std::vector<FormatItem::ptr> m_item;
 };
 
 // Log Output Place
@@ -56,8 +70,11 @@ public:
     virtual ~LogAppender() {}
      
     virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
+    void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
+    LogFormatter::ptr getFormatter() const { return m_formatter; }
 protected:
     LogLevel::Level m_level;
+    LogFormatter::ptr m_formatter;
 };
 
 // Logger
@@ -101,8 +118,9 @@ public:
     void log(LogLevel::Level level, LogEvent::ptr event) override;
      
     FileLogAppender(const std::string& filename);
+    bool reopen() {}
 private:
-    std::string m_name;
+    std::string m_filename;
     std::ofstream m_filestream;
 };
 

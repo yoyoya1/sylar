@@ -7,7 +7,6 @@ Logger::Logger(const std::string& name = "root")
             
 }
 
-
 void Logger::addAppender(LogAppender::ptr appender) {
     m_appenders.push_back(appender);
 }
@@ -30,16 +29,67 @@ void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
     
 void Logger::debug(LogEvent::ptr event) {
 }
-void Logger::info(LogEvent::ptr event) {
-        
+void Logger::info(LogEvent::ptr event) {       
 }
-void Logger::warn(LogEvent::ptr event) {
-        
+void Logger::warn(LogEvent::ptr event) {       
 }
     
-void Logger::fatal(LogEvent::ptr event) {
-        
+void Logger::fatal(LogEvent::ptr event) {       
 }
+ 
+FileLogAppender::FileLogAppender(const std::string& filename) {
+}
+
+void FileLogAppender::log(LogLevel::Level level, LogEvent::ptr event) {
+    if (level >= m_level) {
+        m_filestream << m_formatter.format(event);
+    }
+}
+
+bool FileLogAppender::reopen() {
+    if (m_filestream) {
+        m_filestream.close();
+    }
+    m_filestream.open(m_filename);
+    return !!m_filestream;
+}
+ 
+void StdoutLogAppender::log(LogLevel::Level level, LogEvent::ptr event) {
+    if (level >= m_level) {
+        std::cout << m_formatter.format(event);
+    }
+}
+
+LogFormatter::LogFormatter(const std::string& pattern) 
+    :m_pattern(pattern) {
+}
+
+std::string LogFormatter::format(LogEvent::ptr event) {
+    std::stringstream ss;
+    for (auto& i : m_item) {
+        i->format(ss, event);
+    }
+    return ss.str();
+}
+
+void LogFormatter::init() {
+    // str, format, type
+    std::vector<std::tuple<std::string, std::string, int> > vec;
+    std::string str;
+    size_t last_pos = 0;
+    for (size_t i = 0; i < m_pattern.size(); ++ i) {
+        if (m_pattern[i] != '%') {
+            str.append(1, m_pattern[i]);
+            continue;
+        }
+        size_t n = i + 1;
+        while (n < m_pattern.size()) {
+           if (isspace(m_pattern[n])) {
+           }
+        }
+    }
+}
+ 
 }
     
     
