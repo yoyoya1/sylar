@@ -127,3 +127,7 @@ private:
 }
 
 #endif
+// LogEvent -> Logger -> appender(Formater)
+//                              |   |
+//                              |   |
+//                 StdoutAppender  FileLogAppender
