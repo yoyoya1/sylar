@@ -40,8 +40,23 @@ public:
         FATAL = 5
     };
 };
- 
-// LogFormatter 
+
+// LogAppender
+
+class LogAppender {
+public:
+    typedef std::shared_ptr<LogAppender> ptr;
+    virtual ~LogAppender() {}
+     
+    virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
+    void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
+    LogFormatter::ptr getFormatter() const { return m_formatter; }
+protected:
+    LogLevel::Level m_level;
+    LogFormatter::ptr m_formatter;
+};
+
+// LogOutPlace
 
 class LogFormatter {
 public:
@@ -60,21 +75,6 @@ private:
 private:
     std::string m_pattern;
     std::vector<FormatItem::ptr> m_item;
-};
-
-// Log Output Place
-
-class LogAppender {
-public:
-    typedef std::shared_ptr<LogAppender> ptr;
-    virtual ~LogAppender() {}
-     
-    virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
-    void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
-    LogFormatter::ptr getFormatter() const { return m_formatter; }
-protected:
-    LogLevel::Level m_level;
-    LogFormatter::ptr m_formatter;
 };
 
 // Logger
@@ -127,7 +127,14 @@ private:
 }
 
 #endif
-// LogEvent -> Logger -> appender(Formater)
-//                              |   |
-//                              |   |
-//                 StdoutAppender  FileLogAppender
+// LogEvent -> Logger -> appender(Formater-> format function)
+//                         |     |                  |
+//                         |     |                  |
+//                              StdoutAppender  FileLogAppender
+//                         |     |                  | 
+
+// Use
+// (FileName)        -> LogEvent
+// (LogEvent)        -> Logger(User, some Appenders)
+// (StdOutAppender)  -> log function(Event) -> StdOut
+// (FileOutAppender) -> log function(Event) -> m_FileStream
