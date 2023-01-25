@@ -1,6 +1,25 @@
 #include "log.h"
 
 namespace sylar {
+     
+const char* LogLevel::ToString(LogLevel::Level level) {
+    switch(level) {
+#define XX(name) \ 
+    case LogLevel::name: \
+        return #name; \
+        break;
+
+    XX(DEBUG);
+    XX(INFO);
+    XX(WARN);
+    XX(ERROR);
+    XX(FATAL);
+#undef XX
+    default:
+        return "UNKNOW";
+    }
+    return "UNKNOW";
+}
 
 Logger::Logger(const std::string& name = "root") 
     :m_name(name) {
@@ -64,10 +83,10 @@ LogFormatter::LogFormatter(const std::string& pattern)
     :m_pattern(pattern) {
 }
 
-std::string LogFormatter::format(LogEvent::ptr event) {
+std::string LogFormatter::format(LogLevel::Level level, LogEvent::ptr event) {
     std::stringstream ss;
     for (auto& i : m_item) {
-        i->format(ss, event);
+        i->format(ss, level, event);
     }
     return ss.str();
 }
@@ -84,7 +103,7 @@ void LogFormatter::init() {
             continue;
         }
         if ((i + 1) < m_pattern.size()) {
-            if (m_pattern[i] == '%') {
+            if (m_pattern[i + 1] == '%') {
                 nstr.append(1, m_pattern[i]);
                 continue;
             }
@@ -133,6 +152,25 @@ void LogFormatter::init() {
             i = n;
         }
     }
+    
+    if (!nstr.empty()) {
+        vec.push_back(std::make_tuple(nstr, "", 0));
+    }
+     
+    
+class MessageFormatItem : public LogFormatter::FormatItem {
+public:
+    void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) override {
+        os << event->getContent();
+    }
+};
+class LevelFormatItem : public LogFormatter::FormatItem {
+public:
+    void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) override {
+        os << LogLevel::ToString(level) 
+    }
+};
+
 }
  
 }
