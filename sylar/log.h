@@ -12,6 +12,7 @@
 
 namespace sylar {
 
+class Logger;
 // LogEvent
 
 class LogEvent {
@@ -59,7 +60,7 @@ public:
     typedef std::shared_ptr<LogAppender> ptr;
     virtual ~LogAppender() {}
      
-    virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
+    virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
     void setFormatter(LogFormatter::ptr val) { m_formatter = val; }
     LogFormatter::ptr getFormatter() const { return m_formatter; }
 protected:
@@ -73,13 +74,13 @@ class LogFormatter {
 public:
     typedef std::shared_ptr<LogFormatter> ptr;
     LogFormatter(const std::string& pattern);
-    std::string format(LogLevel::Level level, LogEvent::ptr event);
-private:
+    std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+
     class FormatItem {
     public:
     typedef std::shared_ptr<FormatItem> ptr;
     virtual ~FormatItem() {}
-    virtual void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) = 0;
+    virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
     };
 
     void init();
@@ -90,7 +91,7 @@ private:
 
 // Logger
 
-class Logger {
+class Logger : public std::enable_shared_from_this<Logger> {
 public:
     typedef std::shared_ptr<Logger> ptr;
     Logger(const std::string& name = "root");
@@ -106,10 +107,13 @@ public:
     void delAppender(LogAppender::ptr appender);
     LogLevel::Level getLevel() const { return m_level; }
     void setLevel(LogLevel::Level val) { m_level = val; }
+    
+    const std::string& getName() { return m_name; }
 private:
     std::string m_name;                       // Log Name
     LogLevel::Level m_level;                  // Log Level
     std::list<LogAppender::ptr> m_appenders;  // Log AppenderSet
+    LogFormatter::ptr m_formatter;
 };
 
 // Output stdout Appender
@@ -117,7 +121,7 @@ private:
 class StdoutLogAppender : public LogAppender {
 public:
     typedef std::shared_ptr<StdoutLogAppender> ptr;
-    void log(LogLevel::Level level, LogEvent::ptr event) override;
+    void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
 private:
 };
  
@@ -126,7 +130,7 @@ private:
 class FileLogAppender : public LogAppender {
 public:
     typedef std::shared_ptr<FileLogAppender> ptr;
-    void log(LogLevel::Level level, LogEvent::ptr event) override;
+    void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) override;
      
     FileLogAppender(const std::string& filename);
     bool reopen() {}
@@ -138,12 +142,7 @@ private:
 }
 
 #endif
-// LogEvent -> Logger -> appender(Formater-> format function)
-//                         |     |                  |
-//                         |     |                  |
-//                              StdoutAppender  FileLogAppender
-//                         |     |                  | 
-
+ 
 // Use
 // (FileName)        -> LogEvent
 // (LogEvent)        -> Logger(User, some Appenders)
